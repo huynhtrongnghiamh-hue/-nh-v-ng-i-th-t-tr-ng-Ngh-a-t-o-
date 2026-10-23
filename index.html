@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#080a10">
+<title>POR Vision | Live Camera</title>
+<style>
+:root{color-scheme:dark;--bg:#080a10;--panel:#111521;--line:#252c3d;--muted:#8d98ae;--text:#f4f6fb;--red:#ff3158;--cyan:#55e7ff;--green:#68f5b0}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% -15%,#202844 0%,var(--bg) 55%);color:var(--text);font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+.wrap{max-width:760px;margin:auto;padding:18px 14px 28px}
+header{display:flex;align-items:center;gap:12px;margin:3px 2px 18px}
+.logo{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(145deg,#ff3158,#9224ef);box-shadow:0 8px 28px #ff31582e;font-size:24px}
+.brand{flex:1}.brand h1{font-size:21px;letter-spacing:.7px;margin:0;font-weight:850}.brand p{font-size:12px;color:var(--muted);margin:2px 0 0}
+.live{display:flex;align-items:center;gap:6px;border:1px solid #293448;border-radius:999px;padding:6px 10px;color:#aeb8ca;font-size:11px;letter-spacing:1px}
+.dot{width:7px;height:7px;border-radius:50%;background:#657087}.live.active .dot{background:var(--red);box-shadow:0 0 12px var(--red)}
+.hero{margin-bottom:14px}.hero h2{font-size:25px;line-height:1.15;margin:0 0 6px;letter-spacing:-.7px}.hero p{margin:0;color:var(--muted);font-size:13px}
+.camera-card{background:linear-gradient(180deg,#151a28,#0e111a);border:1px solid var(--line);border-radius:22px;padding:10px;box-shadow:0 18px 55px #0005}
+.stage{position:relative;width:100%;aspect-ratio:3/4;max-height:66vh;min-height:300px;background:#07090f;border-radius:15px;overflow:hidden;isolation:isolate}
+video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+canvas{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
+.placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:26px;background:radial-gradient(ellipse at center,#182035 0%,#090b12 70%)}
+.camera-icon{width:72px;height:72px;border:1px solid #343e55;border-radius:24px;display:grid;place-items:center;font-size:31px;background:#141a29;margin-bottom:16px;box-shadow:inset 0 0 25px #7c8bb312}
+.placeholder b{font-size:17px}.placeholder span{color:var(--muted);font-size:12px;max-width:250px;margin-top:7px}
+.hud{position:absolute;z-index:3;left:12px;right:12px;top:12px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+.hud-tag{background:#080b12b8;backdrop-filter:blur(10px);border:1px solid #ffffff24;border-radius:9px;padding:6px 9px;font-size:10px;letter-spacing:.8px;color:#e9eef9}
+.hud-tag.red{color:#ff8ca2}.scanline{position:absolute;z-index:1;left:0;right:0;height:1px;top:35%;background:linear-gradient(90deg,transparent,#ff3158cc,transparent);box-shadow:0 0 16px #ff3158;opacity:0;pointer-events:none}
+.stage.scanning .scanline{opacity:.7;animation:scan 3.2s linear infinite}
+@keyframes scan{0%{top:8%}100%{top:92%}}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.metric{padding:10px 11px;border:1px solid var(--line);border-radius:12px;background:#0b0e16}
+.metric small{display:block;color:var(--muted);font-size:10px;letter-spacing:.7px;text-transform:uppercase}
+.metric strong{display:block;font-size:19px;margin-top:3px;font-variant-numeric:tabular-nums}
+.metric strong.accent{color:var(--cyan)}
+.status{display:flex;align-items:flex-start;gap:9px;background:#101521;border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin:12px 0;font-size:12px;color:#c8d0df}
+.status-icon{color:var(--cyan);font-size:15px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+button{appearance:none;border:0;border-radius:13px;padding:14px 12px;font:700 14px system-ui;cursor:pointer;transition:transform .12s,opacity .12s}
+button:active{transform:scale(.98)}button:disabled{opacity:.38;cursor:not-allowed}
+.primary{background:linear-gradient(100deg,#ff3158,#d52683);color:white;box-shadow:0 8px 24px #ff31582c}
+.secondary{background:#1a2030;color:#eef2fa;border:1px solid #30394d}
+.full{grid-column:1/-1}
+.settings{margin-top:12px;border:1px solid var(--line);background:#0e121c;border-radius:15px;padding:14px}
+.settings-head{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13px;color:#c8d0df}
+.setting-row input{width:46%;accent-color:var(--red)}
+.setting-row b{min-width:38px;text-align:right;color:white}
+.privacy{margin-top:14px;padding:13px 14px;border-radius:14px;background:#0c1515;border:1px solid #1d3c37;color:#a9c9bf;font-size:11px;line-height:1.6}
+.privacy b{color:#73f3bc}
+footer{text-align:center;color:#626d82;font-size:10px;padding:18px 4px 0}
+@media(min-width:600px){.wrap{padding-top:28px}.stage{aspect-ratio:16/10;max-height:none}.hero h2{font-size:29px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="logo">⌖</div>
+  <div class="brand"><h1>POR <span style="color:var(--red)">VISION</span></h1><p>REAL-TIME PERSON DETECTION</p></div>
+  <div class="live" id="liveBadge"><i class="dot"></i><span id="liveText">OFFLINE</span></div>
+</header>
+<section class="hero">
+  <h2>Camera <span style="color:var(--cyan)">Scanner</span></h2>
+  <p>Nhận diện người ngay trong khung hình camera của bạn.</p>
+</section>
+<section class="camera-card">
+  <div class="stage" id="stage">
+    <div class="placeholder" id="placeholder">
+      <div class="camera-icon">⌖</div><b>Sẵn sàng khởi động</b>
+      <span>Nhấn “Bật camera” và cấp quyền truy cập camera khi trình duyệt hỏi.</span>
+    </div>
+    <video id="video" playsinline muted></video><canvas id="overlay"></canvas>
+    <div class="scanline"></div>
+    <div class="hud"><div class="hud-tag">POR / VISION v2.0</div><div class="hud-tag red" id="hudState">● STANDBY</div></div>
+  </div>
+  <div class="metrics">
+    <div class="metric"><small>Người phát hiện</small><strong id="people">0</strong></div>
+    <div class="metric"><small>Độ tin cậy cao nhất</small><strong class="accent" id="confidence">--</strong></div>
+    <div class="metric"><small>FPS xử lý</small><strong id="fps">--</strong></div>
+  </div>
+</section>
+<div class="status"><span class="status-icon">◈</span><span id="status">Đang chờ bạn bật camera. Mô hình nhận diện sẽ tải khi khởi động lần đầu.</span></div>
+<div class="controls">
+  <button class="primary" id="start">▶ &nbsp; Bật camera</button>
+  <button class="secondary" id="stop" disabled>■ &nbsp; Dừng camera</button>
+  <button class="secondary full" id="switch" disabled>⇄ &nbsp; Đổi camera trước / sau</button>
+</div>
+<section class="settings">
+  <div class="settings-head">Thiết lập nhận diện</div>
+  <div class="setting-row"><label for="threshold">Độ nhạy nhận diện</label><input id="threshold" type="range" min="30" max="85" value="50"><b id="thresholdValue">50%</b></div>
+</section>
+<div class="privacy"><b>🔒 Xử lý riêng tư</b><br>Video được xử lý ngay trên trình duyệt, không có chức năng gửi video lên máy chủ. Công cụ chỉ phát hiện người nhìn thấy trong camera, không nhận diện danh tính, không định vị GPS và không nhìn xuyên tường.</div>
+<footer>POR VISION · CAMERA ACCESS REQUIRES HTTPS OR LOCALHOST</footer>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const video=$('video'),canvas=$('overlay'),ctx=canvas.getContext('2d');
+let stream=null,model=null,running=false,busy=false,facing='environment',raf=0,lastDetect=0,lastFpsTime=0,frames=0;
+const threshold=$('threshold');
+function setStatus(t){$('status').textContent=t}
+function loadScript(src){return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error('Không tải được mô hình nhận diện. Kiểm tra kết nối Internet rồi thử lại.'));document.head.appendChild(s)})}
+async function ensureModel(){
+ if(model)return;
+ setStatus('Đang tải mô hình nhận diện lần đầu…');
+ await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js');
+ await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js');
+ model=await cocoSsd.load({base:'lite_mobilenet_v2'});
+}
+function resizeCanvas(){const r=canvas.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(r.width*d);canvas.height=Math.round(r.height*d);ctx.setTransform(d,0,0,d,0,0)}
+window.addEventListener('resize',resizeCanvas);
+async function start(){
+ if(!window.isSecureContext){setStatus('Trang web chưa chạy qua HTTPS. Hãy đăng tải tệp lên dịch vụ web HTTPS rồi mở liên kết đó để dùng camera.');return}
+ if(!navigator.mediaDevices?.getUserMedia){setStatus('Trình duyệt này không hỗ trợ camera. Hãy mở bằng Chrome hoặc trình duyệt Android hiện đại.');return}
+ $('start').disabled=true;
+ try{
+   await ensureModel();
+   if(stream)stream.getTracks().forEach(t=>t.stop());
+   stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:facing},width:{ideal:1280},height:{ideal:960}}});
+   video.srcObject=stream;await video.play();
+   $('placeholder').style.display='none';video.style.display='block';running=true;
+   $('stop').disabled=false;$('switch').disabled=false;
+   $('liveBadge').classList.add('active');$('liveText').textContent='LIVE';$('hudState').textContent='● SCANNING';
+   $('stage').classList.add('scanning');resizeCanvas();setStatus('Camera đang hoạt động. Đang phân tích khung hình…');
+   lastFpsTime=performance.now();frames=0;loop();
+ }catch(e){
+   setStatus(e.name==='NotAllowedError'?'Bạn chưa cấp quyền camera. Hãy cho phép Camera trong cài đặt trang web rồi thử lại.':(e.message||'Không thể bật camera.'));
+   $('start').disabled=false;
+ }
+}
+function stop(){
+ running=false;cancelAnimationFrame(raf);
+ if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+ video.pause();video.srcObject=null;video.style.display='none';$('placeholder').style.display='flex';
+ ctx.clearRect(0,0,canvas.width,canvas.height);$('people').textContent='0';$('confidence').textContent='--';$('fps').textContent='--';
+ $('start').disabled=false;$('stop').disabled=true;$('switch').disabled=true;
+ $('liveBadge').classList.remove('active');$('liveText').textContent='OFFLINE';$('hudState').textContent='● STANDBY';$('stage').classList.remove('scanning');
+ setStatus('Camera đã dừng.');
+}
+async function loop(){
+ if(!running)return;
+ const w=canvas.clientWidth,h=canvas.clientHeight;
+ ctx.clearRect(0,0,w,h);
+ if(video.readyState>=2&&!busy&&performance.now()-lastDetect>180){
+  busy=true;lastDetect=performance.now();
+  try{
+   const preds=await model.detect(video,20,Number(threshold.value)/100);
+   const sx=w/video.videoWidth,sy=h/video.videoHeight;let count=0,best=0;
+   for(const p of preds){
+    if(p.class!=='person'||p.score<Number(threshold.value)/100)continue;
+    count++;best=Math.max(best,p.score);
+    const [x,y,bw,bh]=p.bbox,xx=x*sx,yy=y*sy,ww=bw*sx,hh=bh*sy;
+    ctx.strokeStyle='#ff3158';ctx.lineWidth=2.5;ctx.strokeRect(xx,yy,ww,hh);
+    const label='PERSON '+Math.round(p.score*100)+'%',tw=ctx.measureText(label).width+15;
+    ctx.font='700 12px system-ui';const labelW=ctx.measureText(label).width+16;
+    ctx.fillStyle='#ff3158';ctx.fillRect(xx,Math.max(0,yy-25),labelW,25);
+    ctx.fillStyle='#fff';ctx.fillText(label,xx+8,Math.max(16,yy-8));
+    const k=Math.min(20,ww/4,hh/4);ctx.strokeStyle='#ffd5dd';ctx.lineWidth=3;
+    for(const [ax,ay,dx,dy] of [[xx,yy,1,1],[xx+ww,yy,-1,1],[xx,yy+hh,1,-1],[xx+ww,yy+hh,-1,-1]]){
+      ctx.beginPath();ctx.moveTo(ax,ay+dy*k);ctx.lineTo(ax,ay);ctx.lineTo(ax+dx*k,ay);ctx.stroke();
+    }
+   }
+   $('people').textContent=count;$('confidence').textContent=count?Math.round(best*100)+'%':'--';
+   frames++;const now=performance.now();if(now-lastFpsTime>=1000){$('fps').textContent=Math.round(frames*1000/(now-lastFpsTime));frames=0;lastFpsTime=now}
+   setStatus(count?`Đã phát hiện ${count} người trong khung hình.`:'Camera đang quét. Chưa phát hiện người nào.');
+  }catch(e){setStatus('Lỗi nhận diện: '+e.message)}
+  finally{busy=false}
+ }
+ raf=requestAnimationFrame(loop);
+}
+$('start').addEventListener('click',start);
+$('stop').addEventListener('click',stop);
+$('switch').addEventListener('click',()=>{facing=facing==='environment'?'user':'environment';start()});
+threshold.addEventListener('input',()=>$('thresholdValue').textContent=threshold.value+'%');
+window.addEventListener('pagehide',stop);
+</script>
+</body>
+</html>
